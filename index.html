@@ -28,7 +28,6 @@
       padding-bottom: 100px;
       overflow-x: hidden;
     }
-    /* Шапка-баннер */
     .hero {
       position: relative;
       width: 100%;
@@ -79,8 +78,6 @@
       font-weight: 600;
       cursor: pointer;
     }
-
-    /* Категории-табы */
     .tabs-wrap {
       padding: 14px 12px 6px;
     }
@@ -108,8 +105,6 @@
       color: #111;
       box-shadow: 0 2px 6px rgba(0,0,0,0.06);
     }
-
-    /* Белые секции с горизонтальным скроллом */
     .section-card {
       background: var(--card-bg);
       border-radius: 24px;
@@ -151,7 +146,6 @@
       border: none;
       cursor: pointer;
     }
-
     .h-scroll {
       display: flex;
       gap: 12px;
@@ -163,7 +157,6 @@
     .h-scroll::-webkit-scrollbar {
       display: none;
     }
-
     .game-card {
       flex: 0 0 136px;
       scroll-snap-align: start;
@@ -212,11 +205,8 @@
       font-size: 11px;
       color: var(--subtext);
     }
-
-    /* Вкладки Поиск и Профиль */
     .view { display: none; }
     .view.active { display: block; }
-
     .search-box {
       padding: 16px 12px;
     }
@@ -246,8 +236,6 @@
       width: 100%;
       height: 190px;
     }
-
-    /* Нижний док */
     .bottom-bar {
       position: fixed;
       bottom: 14px;
@@ -317,8 +305,6 @@
       align-items: center;
       justify-content: center;
     }
-
-    /* Модалка корзины и товара */
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -380,7 +366,6 @@
 </head>
 <body>
 
-  <!-- Вкладка: Главная -->
   <div id="view-home" class="view active">
     <div class="hero">
       <div class="hero-title">Watch Dogs 2</div>
@@ -404,7 +389,6 @@
     <div id="home-sections"></div>
   </div>
 
-  <!-- Вкладка: Поиск -->
   <div id="view-search" class="view">
     <div class="search-box">
       <input type="text" id="searchInput" class="search-input" placeholder="Поиск игр для PS4 / PS5..." oninput="renderSearch()">
@@ -412,7 +396,6 @@
     <div id="search-results" class="grid-catalog"></div>
   </div>
 
-  <!-- Вкладка: Профиль -->
   <div id="view-profile" class="view">
     <div class="section-card" style="padding: 20px 16px; margin-top: 16px;">
       <div class="section-title" id="profile-name">Гость</div>
@@ -420,7 +403,6 @@
     </div>
   </div>
 
-  <!-- Нижняя навигация -->
   <div class="bottom-bar">
     <div class="nav-pill">
       <button class="nav-item active" onclick="switchView('home', this)">
@@ -442,7 +424,6 @@
     </button>
   </div>
 
-  <!-- Модальное окно корзины -->
   <div id="cart-modal" class="modal-overlay" onclick="if(event.target===this) closeCart()">
     <div class="modal-sheet">
       <div class="modal-header">
@@ -460,7 +441,7 @@
       tg.expand();
       const u = tg.initDataUnsafe?.user;
       if (u) {
-        document.getElementById('profile-name').textContent = `${u.first_name}${u.last_name || ''}`;
+        document.getElementById('profile-name').textContent = `${u.first_name} ${u.last_name || ''}`;
       }
     }
 
@@ -515,4 +496,140 @@
                 <span class="badge ${sec.badgeClass}">${sec.badge}</span>
                 <span class="section-title">${sec.title}</span>
               </div>
-              <button class="section-all" onclick="
+              <button class="section-all" onclick="switchView('search', document.querySelectorAll('.nav-item')[1])">Все →</button>
+            </div>
+            <div class="h-scroll">${cardHtml}</div>
+          </div>
+        `;
+      });
+    }
+
+    function filterHome(type, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderHome(type);
+    }
+
+    function renderSearch() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      const box = document.getElementById('search-results');
+      const filtered = PRODUCTS.filter(p => p.title.toLowerCase().includes(q));
+      box.innerHTML = filtered.map(item => `
+        <div class="game-card" onclick="addToCart(${item.id})">
+          <div class="poster-wrap">
+            <img src="${item.img}" alt="${item.title}">
+          </div>
+          <div class="game-price">${item.price} ₽</div>
+          <div class="game-title">${item.title}</div>
+          <div class="game-platform">${item.platform}</div>
+        </div>
+      `).join('');
+    }
+
+    function switchView(viewName, btn) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-' + viewName).classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      if (viewName === 'search') renderSearch();
+    }
+
+    function addToCart(id) {
+      const prod = PRODUCTS.find(p => p.id === id);
+      if (!prod) return;
+      const existing = cart.find(i => i.id === id);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        cart.push({ ...prod, qty: 1 });
+      }
+      saveCart();
+      if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+    }
+
+    function removeFromCart(id) {
+      cart = cart.filter(i => i.id !== id);
+      saveCart();
+      renderCartModal();
+    }
+
+    function saveCart() {
+      localStorage.setItem('tma_cart', JSON.stringify(cart));
+      const count = cart.reduce((s, i) => s + i.qty, 0);
+      const badge = document.getElementById('cart-count');
+      badge.style.display = count > 0 ? 'flex' : 'none';
+      badge.textContent = count;
+    }
+
+    function openCart() {
+      renderCartModal();
+      document.getElementById('cart-modal').classList.add('open');
+    }
+
+    function closeCart() {
+      document.getElementById('cart-modal').classList.remove('open');
+    }
+
+    function renderCartModal() {
+      const box = document.getElementById('cart-items');
+      const btn = document.getElementById('checkout-btn');
+      if (!cart.length) {
+        box.innerHTML = '<p style="color:#888; padding: 12px 0;">В корзине пока пусто. Нажмите на любую игру, чтобы добавить её.</p>';
+        btn.style.display = 'none';
+        return;
+      }
+      const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+      btn.style.display = 'block';
+      btn.textContent = `Оформить заказ • ${total} ₽`;
+
+      box.innerHTML = cart.map(i => `
+        <div class="cart-row">
+          <div>
+            <div style="font-weight:700; font-size:14px;">${i.title}</div>
+            <div style="font-size:12px; color:#888;">${i.platform} • ${i.qty} шт. × ${i.price} ₽</div>
+          </div>
+          <button class="close-btn" onclick="removeFromCart(${i.id})">✕</button>
+        </div>
+      `).join('');
+    }
+
+    async function checkout() {
+      if (cart.length === 0) return;
+
+      const BOT_TOKEN = "9033017375:AAFFfySYphEulyZjhKo0XHlhl3oUaGJkm2I";
+      const ADMIN_ID = "ВСТАВЬ_СВОЙ_ID_СЮДА";
+
+      const user = tg?.initDataUnsafe?.user;
+      const userName = user ? `${user.first_name} (@${user.username || user.id})` : "Гость";
+      const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+      const itemsList = cart.map(i => `• ${i.title} (${i.platform}) x${i.qty} — ${i.price * i.qty} ₽`).join('\n');
+      const text = `🔥 *Новый заказ в магазине!*\n👤 Покупатель: ${userName}\n\n${itemsList}\n\n💰 *Итого: ${total} ₽*`;
+
+      try {
+        const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: ADMIN_ID, text: text, parse_mode: 'Markdown' })
+        });
+
+        if (!res.ok) throw new Error('Ошибка отправки');
+
+        if (tg && tg.showAlert) {
+          tg.showAlert("✅ Заказ принят! Мы скоро напишем вам в Telegram.");
+        } else {
+          alert("✅ Заказ принят!");
+        }
+
+        cart = [];
+        saveCart();
+        closeCart();
+      } catch (err) {
+        alert("❌ Не удалось отправить заказ. Проверьте, запущен ли бот и вписан ли ваш ID.");
+      }
+    }
+
+    renderHome();
+    saveCart();
+  </script>
+</body>
+</html>
