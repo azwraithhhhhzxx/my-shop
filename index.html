@@ -6,106 +6,272 @@
   <title>PS Store Mini App</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    :root {
-      --bg: #f2f3f7;
-      --card-bg: #ffffff;
-      --text: #111111;
-      --subtext: #888c94;
-      --accent: #ff6b2b;
-      --purple: #7b4dff;
-      --green: #38c976;
+    :root { --bg:#f2f3f7; --card-bg:#ffffff; --text:#111111; --subtext:#888c94; --accent:#ff6b2b; --purple:#7b4dff; --green:#38c976; }
+    * { box-sizing:border-box; margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; -webkit-tap-highlight-color:transparent; }
+    body { background-color:var(--bg); color:var(--text); padding-bottom:100px; overflow-x:hidden; }
+    .hero { position:relative; width:100%; height:250px; background:linear-gradient(180deg,rgba(0,0,0,0.2) 0%,rgba(0,0,0,0.75) 100%),url('https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=900&q=80') center/cover no-repeat; display:flex; flex-direction:column; justify-content:flex-end; padding:16px; color:#fff; }
+    .hero-title { font-size:28px; font-weight:900; letter-spacing:0.5px; margin-bottom:12px; text-transform:uppercase; text-shadow:0 2px 8px rgba(0,0,0,0.5); }
+    .hero-bar { background:rgba(255,255,255,0.92); backdrop-filter:blur(10px); border-radius:18px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; color:var(--text); }
+    .hero-bar-info span { display:block; font-size:11px; color:var(--subtext); font-weight:600; }
+    .hero-bar-info strong { font-size:17px; font-weight:800; }
+    .hero-btn { background:#111; color:#fff; border:none; border-radius:999px; padding:9px 16px; font-size:13px; font-weight:600; cursor:pointer; }
+    .tabs-wrap { padding:14px 12px 6px; }
+    .tabs { background:#e6e8ef; border-radius:999px; padding:4px; display:flex; justify-content:space-between; }
+    .tab-btn { flex:1; border:none; background:transparent; padding:9px 10px; border-radius:999px; font-size:13px; font-weight:600; color:#555; cursor:pointer; }
+    .tab-btn.active { background:#fff; color:#111; box-shadow:0 2px 6px rgba(0,0,0,0.06); }
+    .section-card { background:var(--card-bg); border-radius:24px; margin:10px 12px; padding:16px 0 18px; box-shadow:0 2px 10px rgba(0,0,0,0.02); }
+    .section-header { padding:0 16px 12px; display:flex; justify-content:space-between; align-items:center; }
+    .section-title-wrap { display:flex; align-items:center; gap:8px; }
+    .badge { font-size:10px; font-weight:800; padding:4px 9px; border-radius:999px; color:#fff; text-transform:uppercase; }
+    .badge.hit { background:var(--accent); }
+    .badge.soon { background:var(--purple); }
+    .badge.sale { background:var(--green); }
+    .section-title { font-size:19px; font-weight:800; }
+    .section-all { font-size:13px; font-weight:600; color:var(--accent); background:none; border:none; cursor:pointer; }
+    .h-scroll { display:flex; gap:12px; overflow-x:auto; padding:0 16px; scroll-snap-type:x mandatory; scrollbar-width:none; }
+    .h-scroll::-webkit-scrollbar { display:none; }
+    .game-card { flex:0 0 136px; scroll-snap-align:start; cursor:pointer; }
+    .poster-wrap { position:relative; width:136px; height:184px; border-radius:16px; overflow:hidden; margin-bottom:8px; background:#e2e4ec; }
+    .poster-wrap img { width:100%; height:100%; object-fit:cover; }
+    .preorder-pill { position:absolute; bottom:8px; left:8px; background:#ffbe3b; color:#111; font-size:9px; font-weight:800; padding:4px 7px; border-radius:8px; text-transform:uppercase; }
+    .game-price { font-size:16px; font-weight:800; margin-bottom:2px; }
+    .game-title { font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px; }
+    .game-platform { font-size:11px; color:var(--subtext); }
+    .view { display:none; }
+    .view.active { display:block; }
+    .search-box { padding:16px 12px; }
+    .search-input { width:100%; padding:13px 16px; border-radius:16px; border:1px solid #ddd; font-size:15px; outline:none; background:#fff; }
+    .grid-catalog { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; padding:0 12px; }
+    .grid-catalog .game-card { flex:none; width:100%; background:#fff; padding:10px; border-radius:18px; }
+    .grid-catalog .poster-wrap { width:100%; height:190px; }
+    .bottom-bar { position:fixed; bottom:14px; left:12px; right:12px; display:flex; align-items:center; gap:10px; z-index:50; }
+    .nav-pill { flex:1; background:rgba(255,255,255,0.92); backdrop-filter:blur(14px); border-radius:999px; padding:5px; display:flex; justify-content:space-around; box-shadow:0 6px 24px rgba(0,0,0,0.08); }
+    .nav-item { flex:1; border:none; background:transparent; padding:8px 0; border-radius:999px; display:flex; flex-direction:column; align-items:center; gap:2px; font-size:11px; font-weight:600; color:#666; cursor:pointer; }
+    .nav-item.active { background:#f0f1f5; color:#111; }
+    .cart-fab { width:54px; height:54px; border-radius:50%; background:var(--accent); color:#fff; border:none; display:flex; align-items:center; justify-content:center; font-size:20px; position:relative; box-shadow:0 6px 20px rgba(255,107,43,0.35); cursor:pointer; }
+    .cart-badge { position:absolute; top:-2px; right:-2px; background:#111; color:#fff; font-size:11px; font-weight:800; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); display:none; align-items:flex-end; z-index:100; }
+    .modal-overlay.open { display:flex; }
+    .modal-sheet { width:100%; background:#fff; border-radius:24px 24px 0 0; padding:20px 16px 28px; max-height:82vh; overflow-y:auto; }
+    .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+    .modal-title { font-size:19px; font-weight:800; }
+    .close-btn { border:none; background:#f0f1f5; width:32px; height:32px; border-radius:50%; font-size:16px; cursor:pointer; }
+    .cart-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #f0f1f5; }
+    .primary-btn { width:100%; margin-top:16px; background:var(--accent); color:#fff; border:none; padding:14px; border-radius:16px; font-size:15px; font-weight:700; cursor:pointer; }
+  </style>
+</head>
+<body>
+  <div id="view-home" class="view active">
+    <div class="hero">
+      <div class="hero-title">Watch Dogs 2</div>
+      <div class="hero-bar">
+        <div class="hero-bar-info"><span>PS4/PS5</span><strong>От 490 ₽</strong></div>
+        <button class="hero-btn" onclick="addToCart(101)">В корзину +</button>
+      </div>
+    </div>
+    <div class="tabs-wrap">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="filterHome('all', this)">🎮 Игры</button>
+        <button class="tab-btn" onclick="filterHome('preorder', this)">⏳ Предзаказы</button>
+        <button class="tab-btn" onclick="filterHome('sale', this)">🔥 Скидки</button>
+      </div>
+    </div>
+    <div id="home-sections"></div>
+  </div>
+
+  <div id="view-search" class="view">
+    <div class="search-box">
+      <input type="text" id="searchInput" class="search-input" placeholder="Поиск игр для PS4 / PS5..." oninput="renderSearch()">
+    </div>
+    <div id="search-results" class="grid-catalog"></div>
+  </div>
+
+  <div id="view-profile" class="view">
+    <div class="section-card" style="padding:20px 16px; margin-top:16px;">
+      <div class="section-title" id="profile-name">Гость</div>
+      <p style="color:var(--subtext); font-size:13px; margin-top:4px;">Магазин цифровых игр и подписок PlayStation</p>
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <div class="nav-pill">
+      <button class="nav-item active" onclick="switchView('home', this)"><span>🏠</span><span>Главная</span></button>
+      <button class="nav-item" onclick="switchView('search', this)"><span>🔍</span><span>Поиск</span></button>
+      <button class="nav-item" onclick="switchView('profile', this)"><span>👤</span><span>Профиль</span></button>
+    </div>
+    <button class="cart-fab" onclick="openCart()">🛒<span id="cart-count" class="cart-badge" style="display:none;">0</span></button>
+  </div>
+
+  <div id="cart-modal" class="modal-overlay" onclick="if(event.target===this) closeCart()">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <div class="modal-title">Корзина</div>
+        <button class="close-btn" onclick="closeCart()">✕</button>
+      </div>
+      <div id="cart-items"></div>
+      <button id="checkout-btn" class="primary-btn" onclick="checkout()">Оформить заказ</button>
+    </div>
+  </div>
+
+  <script>
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    if (tg) {
+      tg.expand();
+      const u = tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user : null;
+      if (u) document.getElementById('profile-name').textContent = u.first_name + ' ' + (u.last_name || '');
     }
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      -webkit-tap-highlight-color: transparent;
+
+    const PRODUCTS = [
+      { id:1, title:"Grand Theft Auto VI", price:2190, platform:"PS5", section:"hits", preorder:true, img:"https://images.unsplash.com/photo-1605899435973-ca2d1a8861cf?auto=format&fit=crop&w=500&q=80" },
+      { id:2, title:"007 First Light", price:390, platform:"PS5", section:"hits", preorder:false, img:"https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=500&q=80" },
+      { id:3, title:"EA Sports FC 26", price:690, platform:"PS4/PS5", section:"hits", preorder:false, img:"https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=500&q=80" },
+      { id:4, title:"Phantom Blade Zero", price:1190, platform:"PS5", section:"new", preorder:false, img:"https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=500&q=80" },
+      { id:5, title:"Hunting Simulator 3", price:1090, platform:"PS5", section:"new", preorder:false, img:"https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=500&q=80" },
+      { id:6, title:"BeamNG.drive", price:319, platform:"PS5", section:"new", preorder:false, img:"https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=500&q=80" },
+      { id:7, title:"Shrek 2 Remastered", price:990, platform:"PS5", section:"preorder", preorder:true, img:"https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?auto=format&fit=crop&w=500&q=80" },
+      { id:8, title:"Rayman Legends", price:590, platform:"PS5", section:"preorder", preorder:true, img:"https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=500&q=80" },
+      { id:9, title:"Death Stranding", price:790, platform:"PS5", section:"sale", preorder:false, img:"https://images.unsplash.com/photo-1542751110-97427bbecf20?auto=format&fit=crop&w=500&q=80" },
+      { id:10, title:"Silent Hill f", price:1290, platform:"PS5", section:"sale", preorder:false, img:"https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=500&q=80" },
+      { id:101, title:"Watch Dogs 2", price:490, platform:"PS4/PS5", section:"hits", preorder:false, img:"https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=500&q=80" }
+    ];
+
+    const SECTIONS = [
+      { key:"hits", title:"Лидеры продаж", badge:"ХИТ", badgeClass:"hit" },
+      { key:"new", title:"Новинки", badge:"NEW", badgeClass:"sale" },
+      { key:"preorder", title:"Предзаказы", badge:"СКОРО", badgeClass:"soon" },
+      { key:"sale", title:"Пониженные цены", badge:"SALE", badgeClass:"sale" }
+    ];
+
+    let cart = [];
+    try { cart = JSON.parse(localStorage.getItem('tma_cart') || '[]'); } catch(e) { cart = []; }
+
+    function renderHome(filter) {
+      if (!filter) filter = 'all';
+      const container = document.getElementById('home-sections');
+      let html = '';
+      SECTIONS.forEach(function(sec) {
+        if (filter !== 'all' && sec.key !== filter) return;
+        const items = PRODUCTS.filter(function(p) { return p.section === sec.key; });
+        if (!items.length) return;
+        const cards = items.map(function(item) {
+          return '<div class="game-card" onclick="addToCart(' + item.id + ')">' +
+            '<div class="poster-wrap"><img src="' + item.img + '" alt="">' +
+            (item.preorder ? '<div class="preorder-pill">⏳ ПРЕДЗАКАЗ</div>' : '') +
+            '</div>' +
+            '<div class="game-price">' + item.price + ' ₽</div>' +
+            '<div class="game-title">' + item.title + '</div>' +
+            '<div class="game-platform">' + item.platform + '</div></div>';
+        }).join('');
+        html += '<div class="section-card"><div class="section-header"><div class="section-title-wrap">' +
+          '<span class="badge ' + sec.badgeClass + '">' + sec.badge + '</span>' +
+          '<span class="section-title">' + sec.title + '</span></div>' +
+          '<button class="section-all" onclick="switchView(\'search\', document.querySelectorAll(\'.nav-item\')[1])">Все →</button>' +
+          '</div><div class="h-scroll">' + cards + '</div></div>';
+      });
+      container.innerHTML = html;
     }
-    body {
-      background-color: var(--bg);
-      color: var(--text);
-      padding-bottom: 100px;
-      overflow-x: hidden;
+
+    function filterHome(type, btn) {
+      document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      renderHome(type);
     }
-    .hero {
-      position: relative;
-      width: 100%;
-      height: 250px;
-      background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.75) 100%),
-                  url('https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=900&q=80') center/cover no-repeat;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      padding: 16px;
-      color: #fff;
+
+    function renderSearch() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      const box = document.getElementById('search-results');
+      const filtered = PRODUCTS.filter(function(p) { return p.title.toLowerCase().indexOf(q) !== -1; });
+      box.innerHTML = filtered.map(function(item) {
+        return '<div class="game-card" onclick="addToCart(' + item.id + ')">' +
+          '<div class="poster-wrap"><img src="' + item.img + '" alt=""></div>' +
+          '<div class="game-price">' + item.price + ' ₽</div>' +
+          '<div class="game-title">' + item.title + '</div>' +
+          '<div class="game-platform">' + item.platform + '</div></div>';
+      }).join('');
     }
-    .hero-title {
-      font-size: 28px;
-      font-weight: 900;
-      letter-spacing: 0.5px;
-      margin-bottom: 12px;
-      text-transform: uppercase;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+
+    function switchView(viewName, btn) {
+      document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active'); });
+      document.getElementById('view-' + viewName).classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(function(b) { b.classList.remove('active'); });
+      if (btn) btn.classList.add('active');
+      if (viewName === 'search') renderSearch();
     }
-    .hero-bar {
-      background: rgba(255, 255, 255, 0.92);
-      backdrop-filter: blur(10px);
-      border-radius: 18px;
-      padding: 10px 14px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: var(--text);
+
+    function addToCart(id) {
+      const prod = PRODUCTS.find(function(p) { return p.id === id; });
+      if (!prod) return;
+      const existing = cart.find(function(i) { return i.id === id; });
+      if (existing) existing.qty += 1;
+      else cart.push({ id:prod.id, title:prod.title, price:prod.price, platform:prod.platform, qty:1 });
+      saveCart();
+      if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
     }
-    .hero-bar-info span {
-      display: block;
-      font-size: 11px;
-      color: var(--subtext);
-      font-weight: 600;
+
+    function removeFromCart(id) {
+      cart = cart.filter(function(i) { return i.id !== id; });
+      saveCart();
+      renderCartModal();
     }
-    .hero-bar-info strong {
-      font-size: 17px;
-      font-weight: 800;
+
+    function saveCart() {
+      try { localStorage.setItem('tma_cart', JSON.stringify(cart)); } catch(e) {}
+      const count = cart.reduce(function(s, i) { return s + i.qty; }, 0);
+      const badge = document.getElementById('cart-count');
+      badge.style.display = count > 0 ? 'flex' : 'none';
+      badge.textContent = count;
     }
-    .hero-btn {
-      background: #111;
-      color: #fff;
-      border: none;
-      border-radius: 999px;
-      padding: 9px 16px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
+
+    function openCart() { renderCartModal(); document.getElementById('cart-modal').classList.add('open'); }
+    function closeCart() { document.getElementById('cart-modal').classList.remove('open'); }
+
+    function renderCartModal() {
+      const box = document.getElementById('cart-items');
+      const btn = document.getElementById('checkout-btn');
+      if (!cart.length) {
+        box.innerHTML = '<p style="color:#888; padding:12px 0;">В корзине пока пусто. Нажмите на любую игру, чтобы добавить её.</p>';
+        btn.style.display = 'none';
+        return;
+      }
+      const total = cart.reduce(function(s, i) { return s + i.price * i.qty; }, 0);
+      btn.style.display = 'block';
+      btn.textContent = 'Оформить заказ • ' + total + ' ₽';
+      box.innerHTML = cart.map(function(i) {
+        return '<div class="cart-row"><div><div style="font-weight:700; font-size:14px;">' + i.title + '</div>' +
+          '<div style="font-size:12px; color:#888;">' + i.platform + ' • ' + i.qty + ' шт. × ' + i.price + ' ₽</div></div>' +
+          '<button class="close-btn" onclick="removeFromCart(' + i.id + ')">✕</button></div>';
+      }).join('');
     }
-    .tabs-wrap {
-      padding: 14px 12px 6px;
+
+    async function checkout() {
+      if (cart.length === 0) return;
+      const BOT_TOKEN = "9033017375:AAFFfySYphEulyZjhKo0XHlhl3oUaGJkm2I";
+      const ADMIN_ID = "7346065983";
+      const u = tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user : null;
+      const userName = u ? (u.first_name + ' (@' + (u.username || u.id) + ')') : "Гость";
+      const total = cart.reduce(function(sum, item) { return sum + item.price * item.qty; }, 0);
+      const itemsList = cart.map(function(i) { return '• ' + i.title + ' (' + i.platform + ') x' + i.qty + ' — ' + (i.price * i.qty) + ' ₽'; }).join('\n');
+      const text = "🔥 Новый заказ в магазине!\n👤 Покупатель: " + userName + "\n\n" + itemsList + "\n\n💰 Итого: " + total + " ₽";
+
+      try {
+        const res = await fetch("https://api.telegram.org/bot" + BOT_TOKEN + "/sendMessage", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: ADMIN_ID, text: text })
+        });
+        if (!res.ok) throw new Error("Ошибка отправки");
+        if (tg && tg.showAlert) tg.showAlert("✅ Заказ принят! Мы скоро напишем вам в Telegram.");
+        else alert("✅ Заказ принят!");
+        cart = [];
+        saveCart();
+        closeCart();
+      } catch (err) {
+        alert("❌ Не удалось отправить заказ. Убедитесь, что нажали /start в боте @azwraithzxcbot.");
+      }
     }
-    .tabs {
-      background: #e6e8ef;
-      border-radius: 999px;
-      padding: 4px;
-      display: flex;
-      justify-content: space-between;
-    }
-    .tab-btn {
-      flex: 1;
-      border: none;
-      background: transparent;
-      padding: 9px 10px;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 600;
-      color: #555;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-    .tab-btn.active {
-      background: #fff;
-      color: #111;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-    }
-    .section-card {
-      background: var(--card-bg);
-      border-radius: 24px;
-      margin: 
+
+    renderHome('all');
+    saveCart();
+  </script>
+</body>
+</html>
